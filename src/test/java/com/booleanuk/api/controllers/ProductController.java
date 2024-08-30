@@ -1,11 +1,13 @@
 package com.booleanuk.api.controllers;
 
+import com.booleanuk.api.exceptions.ErrorResponse;
 import com.booleanuk.api.exceptions.ProductAlreadyExistsException;
 import com.booleanuk.api.exceptions.ProductNotFoundException;
 import com.booleanuk.api.models.Product;
 import com.booleanuk.api.repositories.ProductRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -22,52 +24,59 @@ public class ProductController {
     }
 
     @PostMapping
-    public Product create(@RequestBody Product product){
-        Product newProduct;
-        try{
-            newProduct = this.theProducts.create(product);
-        } catch (ProductAlreadyExistsException e){
-            throw new ProductAlreadyExistsException(e.getMessage());
+    public ResponseEntity<?> create(@RequestBody Product product) {
+        try {
+            Product createdProduct = theProducts.create(product);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
+        } catch (ProductAlreadyExistsException e) {
+            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
-        return newProduct;
     }
 
     @GetMapping
-    public ArrayList<Product> getAll(){
-        return this.theProducts.getAll();
+    public ResponseEntity<?> getAll(@RequestParam(value = "category", required = false) String category){
+        if(category != null && !category.isEmpty()){
+            try{
+                return ResponseEntity.status(HttpStatus.OK).body(this.theProducts.getCategory(category));
+            } catch (ProductNotFoundException e){
+                ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(this.theProducts.getAll());
     }
 
-    /*@GetMapping("{category}")
-    public ArrayList<Product> getCategory(@PathVariable String category){
-        return this.theProducts.getCategory(category);
-    }*/
-
     @GetMapping("{id}")
-    public Product getOne(@PathVariable int id){
+    public ResponseEntity<?> getOne(@PathVariable int id){
         try {
-            return this.theProducts.getOne(id);
-        } catch (NoSuchElementException e){
-            throw new ProductNotFoundException("No product with that ID found!");
+            return ResponseEntity.status(HttpStatus.OK).body(this.theProducts.getOne(id));
+        } catch (ProductNotFoundException e){
+            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         }
     }
 
     @PutMapping("{id}")
-    public Product update(@PathVariable int id, @RequestBody Product product){
-        Product updatedProduct;
+    public ResponseEntity<?> update(@PathVariable int id, @RequestBody Product product){
         try{
-            updatedProduct = this.theProducts.update(id, product);
+            return ResponseEntity.status(HttpStatus.OK).body(this.theProducts.update(id, product));
         } catch (ProductNotFoundException e){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        } catch (ProductAlreadyExistsException e){
+            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
-        return updatedProduct;
     }
 
     @DeleteMapping("{id}")
-    public Product delete(@PathVariable int id){
+    public ResponseEntity<?> delete(@PathVariable int id){
         try {
-            return this.theProducts.delete(id);
-        } catch (NoSuchElementException e){
-            throw new ProductNotFoundException("No product with that ID found!");
+            return ResponseEntity.status(HttpStatus.OK).body(this.theProducts.delete(id));
+        } catch (ProductNotFoundException e){
+            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         }
     }
 }

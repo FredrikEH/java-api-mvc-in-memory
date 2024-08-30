@@ -17,8 +17,8 @@ public class Product {
     }
 
     public Product(){
-        //this.id = nextID;
-        //nextID++;
+        this.id = nextID;
+        nextID++;
     }
 
     public int getId() {

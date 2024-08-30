@@ -21,10 +21,10 @@ public class ProductRepository {
         return this.products;
     }
 
-    /*public ArrayList<Product> getCategory(String category){
+    public ArrayList<Product> getCategory(String category){
         ArrayList<Product> productsOfCategory = new ArrayList<>();
         for(Product product : this.products) {
-            if (product.getCategory().equals(category)) {
+            if (product.getCategory().equalsIgnoreCase(category)) {
                 productsOfCategory.add(product);
             }
         }
@@ -32,26 +32,33 @@ public class ProductRepository {
             throw new ProductNotFoundException("Not found.");
         }
         return productsOfCategory;
-    }*/
+    }
 
     public Product getOne(int id){
-        return this.products.stream().
-                filter(product -> product.getId() == id).
-                findFirst().orElseThrow();
+        for(Product product : this.products){
+            if (product.getId() == id){
+                return product;
+            }
+        }
+        throw new ProductNotFoundException("Not found.");
     }
 
     public Product create(Product product){
-        Product newProduct = new Product(product.getName(), product.getCategory(), product.getPrice());
         for(Product p : this.products){
             if(p.getName().equals(product.getName())){
-                throw new ProductAlreadyExistsException("Not found.");
+                throw new ProductAlreadyExistsException(HttpStatus.BAD_REQUEST, "Product already exists.");
             }
         }
-        this.products.add(newProduct);
-        return newProduct;
+        this.products.add(product);
+        return product;
     }
 
     public Product update(int id, Product product) throws ProductNotFoundException {
+        for(Product p : this.products){
+            if(p.getName().equals(product.getName())){
+                throw new ProductAlreadyExistsException(HttpStatus.BAD_REQUEST, "Product name already exists!");
+            }
+        }
         Product productToUpdate;
         try {
             productToUpdate = this.getOne(id);
@@ -70,7 +77,7 @@ public class ProductRepository {
                 return this.products.remove(i);
             }
         }
-        return null;
+        throw new ProductNotFoundException("Not found.");
     }
 
 }
